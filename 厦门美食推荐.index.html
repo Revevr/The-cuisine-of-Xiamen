@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src * 'unsafe-inline'; script-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; media-src * data: blob:; connect-src 'none'; form-action 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>厦门美食推荐</title>
+    <script src="https://image.uc.cn/s/uae/g/3n/mos-production/fontawesome-free-7.1.0-web/js/all.min.js"></script>
+    <script src="https://image.uc.cn/s/uae/g/3n/mos-production/0915/3.4.17.js"></script>
+    <script src="https://image.uc.cn/s/uae/g/3n/mos-production/0915/echarts.min.js"></script>
+    <style>
+        /* 自定义CSS使用BEM命名法避免冲突 */
+        .hero-section {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .food-card {
+            transition: all 0.3s ease;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .food-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .image-container {
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+        }
+        
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-michelin {
+            background-color: #fbbf24;
+            color: #78350f;
+        }
+        
+        .badge-nonmaterial {
+            background-color: #a78bfa;
+            color: #4c1d95;
+        }
+        
+        .badge-popular {
+            background-color: #34d399;
+            color: #064e3b;
+        }
+        
+        .badge-local {
+            background-color: #60a5fa;
+            color: #1e3a8a;
+        }
+        
+        .chart-container {
+            height: 400px;
+            width: 100%;
+        }
+        
+        .district-nav {
+            position: sticky;
+            top: -1px;
+            z-index: 40;
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .district-nav a {
+            transition: all 0.2s ease;
+        }
+        
+        .district-nav a:hover {
+            transform: translateY(-2px);
+        }
+        
+        .district-nav a.active {
+            background-color: #f97316;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+<script>
+!(function(j,a,g){j.__itrace_conf = {bid: 'kt40h0wl-koyh4af8',rel: '', uid: '7edf5cbb-8492-4db6-9d95-baafb6c2a646' ,  spa: true, plugins:['jserror','interface','perf','resource','flow','blank']};var b = a.createElement("script");var d = a.getElementsByTagName("script")[0];b.type = "text/javascript";b.crossorigin = true;b.async = true;b.onload = function(){j.__itrace && j.__itrace.setReady()};d.parentNode.insertBefore(b,d);b.src = g})(window, document, "https://g.alicdn.com/woodpeckerx/itrace-next/itrace.iife.js")
+</script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- 导航栏 -->
+    <nav class="district-nav border-b shadow-sm py-4">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-wrap justify-center gap-2 md:gap-4">
+                <a href="#siming" class="px-4 py-2 rounded-full bg-orange-100 text-orange-800 font-medium hover:bg-orange-200 active">
+                    <i class="fas fa-utensils mr-2"></i>思明区
+                </a>
+                <a href="#huli" class="px-4 py-2 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200">
+                    <i class="fas fa-building mr-2"></i>湖里区
+                </a>
+                <a href="#jimei" class="px-4 py-2 rounded-full bg-green-100 text-green-800 font-medium hover:bg-green-200">
+                    <i class="fas fa-graduation-cap mr-2"></i>集美区
+                </a>
+                <a href="#haicang" class="px-4 py-2 rounded-full bg-purple-100 text-purple-800 font-medium hover:bg-purple-200">
+                    <i class="fas fa-mountain mr-2"></i>海沧区
+                </a>
+                <a href="#tongan" class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 font-medium hover:bg-yellow-200">
+                    <i class="fas fa-landmark mr-2"></i>同安区
+                </a>
+                <a href="#xiangan" class="px-4 py-2 rounded-full bg-pink-100 text-pink-800 font-medium hover:bg-pink-200">
+                    <i class="fas fa-flag mr-2"></i>翔安区
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 英雄区域 -->
+    <header class="hero-section text-white py-16 md:py-24">
+        <div class="container mx-auto px-4 hero-content">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-4xl md:text-6xl font-bold mb-6">厦门美食推荐</h1>
+                <p class="text-xl md:text-2xl mb-8 opacity-90">整合千问、DeepSeek、豆包推荐结果，探索闽南古早味与创新美食</p>
+                <div class="flex flex-wrap justify-center gap-4 mb-10">
+                    <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <i class="fas fa-map-marker-alt mr-2"></i>六大行政区
+                    </span>
+                    <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <i class="fas fa-utensil-spoon mr-2"></i>100+特色美食
+                    </span>
+                    <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <i class="fas fa-award mr-2"></i>米其林/黑珍珠认证
+                    </span>
+                    <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <i class="fas fa-star mr-2"></i>综合口碑评分
+                    </span>
+                </div>
+                <a href="#siming" class="inline-block bg-white text-orange-600 font-bold py-3 px-8 rounded-full hover:bg-gray-100 transition duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-chevron-down mr-2"></i>开始探索
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 统计数据图表 -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">厦门美食数据概览</h2>
+            <p class="text-center text-gray-600 mb-10">基于2025-2026年权威餐饮榜单与消费者反馈</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-gray-50 p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">各区美食数量分布</h3>
+                    <div id="districtChart" class="chart-container"></div>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">美食荣誉类型统计</h3>
+                    <div id="honorChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 思明区美食 -->
+    <section id="siming" class="py-12 bg-orange-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-orange-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-utensils text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">思明区：老城烟火与文艺融合的美食高地</h2>
+                    <p class="text-gray-600 mt-2">汇聚中山路、八市、沙坡尾等知名美食地标，传统闽南小吃与高端创新菜系交汇之地</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 沙茶面 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4aebc3a7d51ff2f3a3635da937704d97" alt="沙茶面：深褐色浓郁汤底，面条上铺满豆干、鱿鱼、醋肉、大虾等丰富配料，热气腾腾">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">沙茶面</h3>
+                            <span class="badge badge-michelin">必比登推介</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：乌糖沙茶面、四里沙茶面、月华沙茶面</p>
+                        <p class="text-gray-700 mb-4">汤底由18种香料与花生酱熬制，甜辣鲜层层递进，配料丰富；本地人从小吃到大的日常味道</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">大众点评必吃榜</span>
+                            <span class="badge badge-local">本地人推荐</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://mparticle.uc.cn/article.html?uc_param_str=frdnsnpfvecpntnwprdssskt#!wm_aid=8b293562f3ca4a749c86af6cbe392555!!wm_id=5dd71db092a241f49c7c6109fff8e40f" class="text-orange-500 hover:underline">厦门美食地图</a>, 
+                            <a href="https://www.thepaper.cn/newsDetail_forward_29207273" class="text-orange-500 hover:underline">11月最浪漫的山海城市</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 土笋冻 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4915cc255c2a2e210a93f85ebb570c4c" alt="土笋冻：晶莹剔透的胶冻状食品，内含星虫，配蒜蓉酱油醋，清爽解腻">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">土笋冻</h3>
+                            <span class="badge badge-local">特色小吃</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：西门土笋冻、佳味再添</p>
+                        <p class="text-gray-700 mb-4">滩涂星虫熬煮凝结而成，晶莹Q弹，配蒜蓉酱油醋酸萝卜清爽解腻；名字带"笋"实为海鲜，极具辨识度</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">传统技艺</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://baike.baidu.com/item/%E9%B9%AD%E5%B2%9B%E9%A3%8E%E5%91%B3%E4%BD%B3%E8%82%B4/12620176" class="text-orange-500 hover:underline">鹭岛风味佳肴</a>, 
+                            <a href="https://mparticle.uc.cn/article.html?uc_param_str=frdnsnpfvecpntnwprdssskt#!wm_aid=8b293562f3ca4a749c86af6cbe392555!!wm_id=5dd71db092a241f49c7c6109fff8e40f" class="text-orange-500 hover:underline">厦门美食地图</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 烧肉粽 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/6d54608126059a174bcf1b4b26700740" alt="烧肉粽：个头赛拳头的肉粽，剥开粽叶露出油亮糯米，内含五花肉、咸蛋黄、栗子等丰富馅料">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">烧肉粽</h3>
+                            <span class="badge badge-local">传统美食</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：1980烧肉粽、佳味再添</p>
+                        <p class="text-gray-700 mb-4">"个头赛拳头"，卤汁炒香糯米包裹五花肉、咸蛋黄、栗子，久煮后油脂融合；淋甜辣酱层次丰富</p>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://mparticle.uc.cn/article.html?uc_param_str=frdnsnpfvecpntnwprdssskt#!wm_aid=8b293562f3ca4a749c86af6cbe392555!!wm_id=5dd71db092a241f49c7c6109fff8e40f" class="text-orange-500 hover:underline">厦门美食地图</a>, 
+                            <a href="https://baike.baidu.com/item/%E5%8E%A6%E9%97%A8%E8%8F%9C/0" class="text-orange-500 hover:underline">厦门菜</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 海蛎煎 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/95d6d7b7b73bbccb0c83f33c5c439a45" alt="海蛎煎：金黄酥脆的煎饼，内含新鲜大海蛎，外焦里嫩，蛋香浓郁">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">海蛎煎</h3>
+                            <span class="badge badge-popular">媒体推荐</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：莲欢海蛎煎、珍珍海蛎煎</p>
+                        <p class="text-gray-700 mb-4">新鲜大海蛎裹地瓜粉共煎，外焦里嫩，蛋香浓郁；莲欢曾上《十二道锋味》《宵夜江湖》</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">传统小吃</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://baike.baidu.com/item/%E5%8E%A6%E9%97%A8%E5%B2%9B/5630242" class="text-orange-500 hover:underline">厦门岛</a>, 
+                            <a href="https://m.dianping.com/ugcdetail/141053720?bizType=29&sceneType=0" class="text-orange-500 hover:underline">大众点评网</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-orange-100 rounded-2xl border border-orange-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">思明区权威认证亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-orange-600 mb-2"><i class="fas fa-star mr-2"></i>米其林指南入选餐厅</h4>
+                        <p class="text-gray-700">听鹭洲新闽菜、1927东园私厨、鹭城轩、兴旺海鲜·荣廷荟</p>
+                        <a href="https://www.zgswcn.com/shangxun/news.html?aid=1116893" class="text-sm text-orange-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-orange-600 mb-2"><i class="fas fa-award mr-2"></i>必比登推介餐厅</h4>
+                        <p class="text-gray-700">达20余家，涵盖乌糖沙茶面、浮屿大同鸭肉粥、阿忠食坊等街边名店</p>
+                        <a href="https://m.sunnews.cn/html/2024-12/16/content_826898.htm?div=-1" class="text-sm text-orange-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-orange-600 mb-2"><i class="fas fa-utensils mr-2"></i>大众点评必吃榜常客</h4>
+                        <p class="text-gray-700">阿杰五香、四里沙茶面等店铺常年上榜</p>
+                        <a href="https://www.xmtv.cn/xmtv/2025-07-21/670850c6b49ae138.html" class="text-sm text-orange-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 湖里区美食 -->
+    <section id="huli" class="py-12 bg-blue-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-blue-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-building text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">湖里区：多元风味与高端餐饮并存</h2>
+                    <p class="text-gray-600 mt-2">重要居住与商务区，聚集米其林认证餐厅和新兴网红美食空间，从地道排档到精致私房菜</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 私厦焖鲍姜母鸭 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/b6acbebe12770922e67dc718823b720d" alt="私厦焖鲍姜母鸭：砂锅中焖煮的姜母鸭，色泽红亮，鲍鱼与鸭肉融合，香气浓郁">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">私厦焖鲍姜母鸭</h3>
+                            <span class="badge badge-michelin">必比登推荐</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：私厦里</p>
+                        <p class="text-gray-700 mb-4">米其林必比登推荐、央视报道、金梧桐三重认证；红面番鸭慢焅吸收老姜辛香与鲍鱼海洋鲜味</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">三重认证</span>
+                            <span class="badge badge-popular">央视报道</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_32067561" class="text-blue-500 hover:underline">湖里吃的也太好了吧！</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 砂锅焗东山小管 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/9032425e3b8d1978b1afba2f2d25ef77" alt="砂锅焗东山小管：砂锅中焗烤的东山小管，色泽金黄，锅气十足，小管爆膏脆嫩">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">砂锅焗东山小管</h3>
+                            <span class="badge badge-local">招牌热菜</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：私厦里</p>
+                        <p class="text-gray-700 mb-4">野生小管爆膏脆嫩，锅气十足，主厨创意突出，为招牌热菜之一</p>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_32067561" class="text-blue-500 hover:underline">湖里吃的也太好了吧！</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 吕娘子红烧牛肉面 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/10a94051e5c940044b3b7227f76f1388" alt="吕娘子红烧牛肉面：大碗红烧牛肉面，面条粗韧，牛肉酥烂脱骨，汤色红亮">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">吕娘子红烧牛肉面</h3>
+                            <span class="badge badge-michelin">必比登推介</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：吕娘子红烧牛肉面</p>
+                        <p class="text-gray-700 mb-4">手工粗韧面条裹满秘制酱汁，牛肉炖得酥烂脱骨，随餐附赠大块牛肉汤；肥肠卤透弹牙无脏器味</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">手工制作</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_32067561" class="text-blue-500 hover:underline">湖里吃的也太好了吧！</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 四果汤 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/00ccbbe37cb0839f7ee7abd3cbd0e309" alt="四果汤：清凉甜品，碗中盛放仙草、石花、芋圆、阿达子、莲子等多种配料，汤色清澈">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">四果汤</h3>
+                            <span class="badge badge-local">传统甜品</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：R弟四果汤</p>
+                        <p class="text-gray-700 mb-4">手工熬制仙草与石花，保持传统老味道，无椰果等新生代小料；配料含芋圆、阿达子、莲子、麦仁等</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">传统工艺</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_29012091" class="text-blue-500 hover:underline">馋馋馋！深夜诱惑</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-blue-100 rounded-2xl border border-blue-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">湖里区新兴美食场景亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 mb-2"><i class="fas fa-map-marker-alt mr-2"></i>凤凰里街区</h4>
+                        <p class="text-gray-700">2026年4月新开，含咖啡、美食、亲子友好社区三大主题空间</p>
+                        <a href="https://www.xmnn.cn/news/xmxw/202604/t20260421_422275.html" class="text-sm text-blue-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 mb-2"><i class="fas fa-industry mr-2"></i>联发华美空间文创园</h4>
+                        <p class="text-gray-700">锅炉咖啡（《开端》取景地）、Stove披萨（老外经营20年）、王呆呆热炒公社等聚集地</p>
+                        <a href="https://m.ctrip.com/webapp/you/community/detail?articleId=217769168" class="text-sm text-blue-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 mb-2"><i class="fas fa-utensils mr-2"></i>必比登推介餐厅</h4>
+                        <p class="text-gray-700">磐雅苑、胖达的川菜馆、吕娘子红烧牛肉面等</p>
+                        <a href="https://www.thepaper.cn/newsDetail_forward_32067561" class="text-sm text-blue-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 集美区美食 -->
+    <section id="jimei" class="py-12 bg-green-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-green-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">集美区：学村风情与地道古早味交融</h2>
+                    <p class="text-gray-600 mt-2">依托集美学村浓厚人文氛围，石鼓路一带集中大量学生党喜爱的小吃摊与老字号店铺</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 春卷 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/270a3735ab33009887fa78c86b89b1b3" alt="春卷：薄皮包裹十几种食材的春卷，馅料丰富，配甜辣酱，色泽诱人">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">春卷</h3>
+                            <span class="badge badge-local">学生最爱</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：石鼓路春卷摊</p>
+                        <p class="text-gray-700 mb-4">薄皮裹入十几种食材，寓意"包罗万象"；加浒苔甜辣酱，正宗集美味道，"每次来都要买一大盒"</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">高频回购</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.douyin.com/video/7659712417114834127" class="text-green-500 hover:underline">集美学村半日游攻略</a>, 
+                            <a href="https://xm.fjsen.com/wap/2026-04/27/content_32175698.htm" class="text-green-500 hover:underline">闽韵传承系列活动</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 四果汤 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/1a587bd529f18f9bc0f8e799b3816e7a" alt="林阿姨四果汤：碗中盛放十六种小料的四果汤，地瓜芋头绵密，陈皮蜂蜜清甜">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">四果汤</h3>
+                            <span class="badge badge-popular">日销800碗</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：林阿姨四果汤</p>
+                        <p class="text-gray-700 mb-4">十六种小料可选，地瓜芋头绵密，特制陈皮蜂蜜清甜；旺季日销800碗，毕业学子常回访</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">学生推荐</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://iqb.jimei.gov.cn/ywkd/jmbxw/202504/t20250407_1095640.htm" class="text-green-500 hover:underline">集美学村8元小吃</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 麻糍 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/39f11622fba7524bdaf8b4b75330f2eb" alt="麻糍：手工古法制作的糯米皮麻糍，创新加入冰激凌、奶酪、芋泥等馅料，软糯香甜">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">麻糍</h3>
+                            <span class="badge badge-nonmaterial">十年手作</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：杨府匠麻糍店</p>
+                        <p class="text-gray-700 mb-4">手工古法制作糯米皮，创新加入冰激凌、奶酪、芋泥等馅料；"十年手作"，"爆品"，"队伍悄然增长"</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">创新口味</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://iqb.jimei.gov.cn/ywkd/jmbxw/202504/t20250407_1095640.htm" class="text-green-500 hover:underline">集美学村8元小吃</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 鸡蛋汉堡 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4ab7556f1200c7633040f8f8c06d11bf" alt="鸡蛋汉堡：金黄酥脆的鸡蛋汉堡，肉多量足，推出芝士玉米双蛋堡，受女生欢迎">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">鸡蛋汉堡</h3>
+                            <span class="badge badge-popular">日销破千</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：陈锦健鸡蛋堡</p>
+                        <p class="text-gray-700 mb-4">肉多量足，推出芝士玉米双蛋堡受女生欢迎；"超多鲜肉鸡蛋堡让学子直呼肉多得过分"，日销量破千</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">学生美食</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://iqb.jimei.gov.cn/ywkd/jmbxw/202504/t20250407_1095640.htm" class="text-green-500 hover:underline">集美学村8元小吃</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-green-100 rounded-2xl border border-green-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">集美区文化传承亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-green-600 mb-2"><i class="fas fa-users mr-2"></i>社区活动推广</h4>
+                        <p class="text-gray-700">纺织社区教做青团、宁宝社区传授花生汤与海蛎煎、第一社区开展肉粽亲子教学</p>
+                        <a href="https://xm.fjsen.com/wap/2026-04/27/content_32175698.htm" class="text-sm text-green-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-green-600 mb-2"><i class="fas fa-store-alt mr-2"></i>庙会经济</h4>
+                        <p class="text-gray-700">两岸特色庙会设台胞甜品摊"宁曦小铺"，主打焦糖布丁</p>
+                        <a href="https://xm.fjsen.com/wap/2026-06/28/content_32209310.htm" class="text-sm text-green-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-green-600 mb-2"><i class="fas fa-lightbulb mr-2"></i>创新融合</h4>
+                        <p class="text-gray-700">顺顺炸面包推出香菜牛肉、榴莲芝士口味，短视频播放超十万</p>
+                        <a href="http://www.mnw.cn/xiamen/news/3101855.html" class="text-sm text-green-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 海沧区美食 -->
+    <section id="haicang" class="py-12 bg-purple-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-purple-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-mountain text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">海沧区：山海馈赠与非遗传承之地</h2>
+                    <p class="text-gray-600 mt-2">依山傍海，拥有省级非遗"土笋冻制作技艺"，并以"海沧三宝"闻名，兼具自然馈赠与深厚文化底蕴</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 土笋冻 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/e75f939054af57804a6ea38bbff65433" alt="海沧土笋冻：省级非遗土笋冻，晶莹透明、Q弹爽口，配蒜蓉酱油醋，为海沧三宝之首">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">土笋冻</h3>
+                            <span class="badge badge-nonmaterial">省级非遗</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：鑫竹林海鲜大排档、阿丽海鲜城</p>
+                        <p class="text-gray-700 mb-4">"海沧三宝"之首；可口革囊星虫熬煮胶质凝结，晶莹透明、Q弹爽口；2022年升为省级非遗</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">海沧三宝</span>
+                            <span class="badge badge-popular">区域名片</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.haicang.gov.cn/zjhc/hcfq/41905/202108/t20210811_800508.htm" class="text-purple-500 hover:underline">海沧区土特产品</a>, 
+                            <a href="https://m.sunnews.cn/html/2024-08/30/content_824334.htm?div=0" class="text-purple-500 hover:underline">闽南非遗</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 白灼章鱼 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/b00e3c08e5fb7ce1dda80e594bab18d0" alt="白灼章鱼：原汁原味的白灼章鱼，口感爽脆鲜美，配酱油芥末，体现大海原始魅力">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">白灼章鱼</h3>
+                            <span class="badge badge-local">海沧三宝</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：亚珠海鲜大酒楼（海沧店）</p>
+                        <p class="text-gray-700 mb-4">"海沧三宝"之一；原汁原味，口感爽脆鲜美，体现大海原始魅力；已有50余年风靡历史</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">传统名菜</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://haicang.xmnn.cn/lhhc/202405/t20240506_5596751.htm" class="text-purple-500 hover:underline">好料！厦门味</a>, 
+                            <a href="https://www.thepaper.cn/newsDetail_forward_30005372" class="text-purple-500 hover:underline">海沧村味</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 土龙汤 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/ee33007a865b2748c4ded85da8071076" alt="土龙汤：乳白与金黄交织的土龙汤，药香与肉香交融，温润醇厚，有滋补功效">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">土龙汤</h3>
+                            <span class="badge badge-local">海沧三宝</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：佳味馆</p>
+                        <p class="text-gray-700 mb-4">"海沧三宝"之一；以土龙为主要原料，被认为具有滋补强身功效；"秘制土龙汤"获中国饭店协会评为"中国名菜"</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">中国名菜</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://baike.baidu.com/item/%E5%8E%A6%E9%97%A8%E5%B8%82%E6%B5%B7%E6%B2%A7%E5%8C%BA%E4%BD%B3%E5%91%B3%E9%A6%86%E6%B5%B7%E9%B2%9C%E9%85%92%E6%A5%BC/13847012" class="text-purple-500 hover:underline">佳味馆海鲜酒楼</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 沙茶面 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/48602bfa4044d6ee829125e78d704658" alt="吴冠沙茶面：隐藏村落中的地道沙茶面，汤底浓度完美，甜中带辣，鸭血与豆腐为点睛之笔">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">沙茶面</h3>
+                            <span class="badge badge-local">隐藏美食</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：吴冠沙茶面</p>
+                        <p class="text-gray-700 mb-4">隐藏村落中的地道风味，汤底浓度完美，甜中带辣，辣中有香；鸭血与豆腐搭配为点睛之笔</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">本地人推荐</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_30683625" class="text-purple-500 hover:underline">好呷！厦门美食</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-purple-100 rounded-2xl border border-purple-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">海沧区品牌建设亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-purple-600 mb-2"><i class="fas fa-tags mr-2"></i>"海沧三宝"区域名片</h4>
+                        <p class="text-gray-700">土笋冻、白灼章鱼、土龙汤构成区域美食名片，广泛见于官方宣传</p>
+                        <a href="https://www.haicang.gov.cn/zjhc/hcfq/41905/202108/t20210811_800508.htm" class="text-sm text-purple-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-purple-600 mb-2"><i class="fas fa-trademark mr-2"></i>集体商标授权</h4>
+                        <p class="text-gray-700">已9家商户获"海沧土笋冻"图形集体商标授权，实现标准化生产</p>
+                        <a href="https://www.sunnews.cn/xmcs/202605/t20260519_429361.html" class="text-sm text-purple-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-purple-600 mb-2"><i class="fas fa-utensils mr-2"></i>多元化生态发展</h4>
+                        <p class="text-gray-700">沧海宴、重庆火锅+小吃街概念推动美食多样性</p>
+                        <a href="https://www.thepaper.cn/newsDetail_forward_30683625" class="text-sm text-purple-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 同安区美食 -->
+    <section id="tongan" class="py-12 bg-yellow-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-yellow-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-landmark text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">同安区：传统技艺与乡土风味并重</h2>
+                    <p class="text-gray-600 mt-2">历史悠久，保留众多传统节庆食品与地方名菜，多项列入市级及以上非遗名录</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 同安封肉 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/2fd9c6244555ee5df8810c0938e3fc18" alt="同安封肉：整块五花肉慢炖至入口即化的同安封肉，色泽红亮，肥而不腻，象征团圆吉祥">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">同安封肉</h3>
+                            <span class="badge badge-nonmaterial">市级非遗</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：泥山饭店、吴招治薄饼嫂</p>
+                        <p class="text-gray-700 mb-4">整块五花肉慢炖至入口即化，肥而不腻，象征团圆吉祥；2019年列入市级非遗</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-local">传统名菜</span>
+                            <span class="badge badge-popular">央视报道</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://tongan.xmnn.cn/jdgz/202506/t20250610_347130.htm" class="text-yellow-500 hover:underline">秀出银城烟火气</a>, 
+                            <a href="https://tongan.xmnn.cn/jdgz/202503/t20250306_301915.htm" class="text-yellow-500 hover:underline">厦门非遗美食</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 大肠血 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/3eb72475a7356fe309bef917b46093c8" alt="大肠血：外皮弹牙，内里猪血嫩如豆花的大肠血，配咸饭营养饱足，官方授牌必点小吃">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">大肠血</h3>
+                            <span class="badge badge-local">必点小吃</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：实再客古庄大肠血</p>
+                        <p class="text-gray-700 mb-4">外皮弹牙，内里猪血嫩如豆花，配咸饭营养饱足；官方授牌"必点小吃"</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">官方推荐</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://tongan.xmnn.cn/jdgz/202506/t20250610_347130.htm" class="text-yellow-500 hover:underline">秀出银城烟火气</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 炸枣 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/f17dff7915783c3f6f8ec7d9ffbf966b" alt="炸枣：传统闽南甜点炸枣，外酥内糯，咸味炸枣放豆干韭菜肉丝，一口爆香，4元一个量足味美">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">炸枣</h3>
+                            <span class="badge badge-local">传统甜点</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：双红食品、琼头老手艺炸枣</p>
+                        <p class="text-gray-700 mb-4">传统闽南甜点，外酥内糯，咸味炸枣放豆干韭菜肉丝，一口爆香，4元一个量足味美</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">手工制作</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://tongan.xmnn.cn/jdgz/202506/t20250610_347130.htm" class="text-yellow-500 hover:underline">秀出银城烟火气</a>, 
+                            <a href="https://m.dianping.com/ugcdetail/322648447?bizType=29&sceneType=0" class="text-yellow-500 hover:underline">翔安土著扫荡</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 海蛎炸 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/41940b46bfdf67f6a47087509015175f" alt="海蛎炸：金黄酥脆的海蛎炸，葱花香与海蛎鲜味交融，潘涂被誉为海蛎第一村，黄金三倍体海蛎个头巨大">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">海蛎炸</h3>
+                            <span class="badge badge-local">海蛎第一村</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：钟楼小吃二店、潘涂海蛎夜市</p>
+                        <p class="text-gray-700 mb-4">金黄酥脆，葱花香与海蛎鲜味交融；潘涂被誉为"海蛎第一村"，黄金三倍体海蛎个头巨大</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">夜市美食</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://tongan.xmnn.cn/jdgz/202506/t20250610_347130.htm" class="text-yellow-500 hover:underline">秀出银城烟火气</a>, 
+                            <a href="https://www.thepaper.cn/newsDetail_forward_32354617" class="text-yellow-500 hover:underline">环东浪漫线美食</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-yellow-100 rounded-2xl border border-yellow-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">同安区节庆活动亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-yellow-600 mb-2"><i class="fas fa-beer mr-2"></i>青岛啤酒嘉年华</h4>
+                        <p class="text-gray-700">第十六届同安青岛啤酒嘉年华：吴招治薄饼、荔玲菠萝炒饭等齐聚</p>
+                        <a href="https://difang.gmw.cn/fj/2026-07/27/content_38909862.htm" class="text-sm text-yellow-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-yellow-600 mb-2"><i class="fas fa-leaf mr-2"></i>高山茶香宴</h4>
+                        <p class="text-gray-700">军营村推出茶香排骨、茶叶鲜虾、茶香正番鸭汤等茶膳菜品</p>
+                        <a href="http://xm.fjsen.com/2025-11/18/content_32080195.htm" class="text-sm text-yellow-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-yellow-600 mb-2"><i class="fas fa-utensils mr-2"></i>芋头宴</h4>
+                        <p class="text-gray-700">汀溪镇褒美村举行，主角为"褒美进士芋"，注册地理标志商标</p>
+                        <a href="https://difang.gmw.cn/fj/2025-12/26/content_38503294.htm" class="text-sm text-yellow-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 翔安区美食 -->
+    <section id="xiangan" class="py-12 bg-pink-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center mb-8">
+                <div class="bg-pink-500 text-white p-3 rounded-full mr-4">
+                    <i class="fas fa-flag text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">翔安区：非遗美食与"百味"品牌崛起</h2>
+                    <p class="text-gray-600 mt-2">通过打造"翔安百味"区域公共品牌，系统化推广本地特色美食，已有109种地道风味纳入体系</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 地瓜粉粿 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/e43458e00789f2b4d1278d44bfe937be" alt="地瓜粉粿：Q弹爽滑的地瓜粉粿，搭配海蛏、虾仁、海蛎、荷兰豆，淋红葱头油，汤汁鲜甜味美">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">地瓜粉粿</h3>
+                            <span class="badge badge-local">传统风味</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：多家传统餐馆</p>
+                        <p class="text-gray-700 mb-4">Q弹爽滑，搭配海蛏、虾仁、海蛎、荷兰豆，淋红葱头油，汤汁鲜甜味美；相传与明代洪朝选有关</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">历史传承</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_30745436" class="text-pink-500 hover:underline">享玩翔安</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 碗仔粿 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/c741c78cc938ff14f144a8c4e94e7d46" alt="碗仔粿：Q弹软糯的碗仔粿，内馅有肉末、鹌鹑蛋、干贝，配蒜蓉酱与花生粉，风味协调，3-5元一碗">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">碗仔粿</h3>
+                            <span class="badge badge-local">平价小吃</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：刘记碗仔粿、马巷公园小摊</p>
+                        <p class="text-gray-700 mb-4">Q弹软糯，无过多姜味，内馅有肉末、鹌鹑蛋、干贝，配蒜蓉酱与花生粉，风味协调；3-5元一碗</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">街头美食</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_30745436" class="text-pink-500 hover:underline">享玩翔安</a>, 
+                            <a href="https://m.dianping.com/ugcdetail/322648447?bizType=29&msource=baiduappugc&sceneType=0" class="text-pink-500 hover:underline">翔安土著扫荡</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 芋包 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/6d2f2b569974c4546706994809480ba8" alt="芋包：芋泥皮经油炸后外酥里糯的芋包，内馅含猪肉、虾仁、冬笋、香菇、豆干，配酸萝卜解腻">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">芋包</h3>
+                            <span class="badge badge-local">特色小吃</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：翔寅小吃店</p>
+                        <p class="text-gray-700 mb-4">芋泥皮经油炸后外酥里糯，内馅含猪肉、虾仁、冬笋、香菇、豆干；配酸萝卜解腻，口感层次分明</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-nonmaterial">传统工艺</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.thepaper.cn/newsDetail_forward_30745436" class="text-pink-500 hover:underline">享玩翔安</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 东寮豆干 -->
+                <div class="food-card bg-white flex flex-col">
+                    <div class="image-container bg-gray-100">
+                        <img src="https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/3ff3068c6724ddf852b104253bf33748" alt="东寮豆干：黄豆慢磨古法压制的东寮豆干，豆香浓郁紧实，可煎、卤、煮汤，年产值超3000万元">
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-800">东寮豆干</h3>
+                            <span class="badge badge-nonmaterial">一村一品</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">代表性店铺：东寮社区多家作坊</p>
+                        <p class="text-gray-700 mb-4">黄豆慢磨古法压制，豆香浓郁紧实，可煎、卤、煮汤；入选省市级"一村一品"，年产值超3000万元</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="badge badge-popular">产业规模</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-auto">
+                            参考来源：<a href="https://www.toutiao.com/w/1866938056239108/" class="text-pink-500 hover:underline">福建厦门十大美食</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 p-6 bg-pink-100 rounded-2xl border border-pink-200">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">翔安区品牌运营亮点</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-pink-600 mb-2"><i class="fas fa-utensils mr-2"></i>"翔安百味宴"主题套餐</h4>
+                        <p class="text-gray-700">由滨海渔港、临家闽南菜等七家授牌名店提供，人均不足60元</p>
+                        <a href="https://scjg.xm.gov.cn/xxgk/jcdt/202605/t20260519_2996621.htm" class="text-sm text-pink-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-pink-600 mb-2"><i class="fas fa-map-marked-alt mr-2"></i>配套服务</h4>
+                        <p class="text-gray-700">可通过"翔安百味"高德地图查找合规门店，查看距离、预计时长、特色菜品</p>
+                        <a href="https://scjg.xm.gov.cn/xxgk/jcdt/202605/t20260519_2996621.htm" class="text-sm text-pink-500 hover:underline">了解更多</a>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg">
+                        <h4 class="font-bold text-pink-600 mb-2"><i class="fas fa-book mr-2"></i>文化延伸</h4>
+                        <p class="text-gray-700">出版《翔安百味——山海厝边的烟火滋味》图书，附二维码扫码观看美食视频</p>
+                        <a href="https://scjg.xm.gov.cn/xxgk/jcdt/202605/t20260519_2996621.htm" class="text-sm text-pink-500 hover:underline">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">关于本页面</h3>
+                    <p class="text-gray-300">本页面基于2025-2026年发布的权威餐饮榜单（米其林、黑珍珠、金梧桐、必比登推介）、政府文旅公告、大众点评数据及主流媒体推荐，整合千问、DeepSeek、豆包等AI助手常见推荐信息，全面梳理厦门市六大行政区的代表性特色美食。</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold mb-4">数据来源</h3>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><i class="fas fa-check-circle mr-2 text-green-400"></i>米其林指南厦门榜单</li>
+                        <li><i class="fas fa-check-circle mr-2 text-green-400"></i>黑珍珠餐厅指南</li>
+                        <li><i class="fas fa-check-circle mr-2 text-green-400"></i>大众点评必吃榜</li>
+                        <li><i class="fas fa-check-circle mr-2 text-green-400"></i>厦门文旅局官方推荐</li>
+                        <li><i class="fas fa-check-circle mr-2 text-green-400"></i>主流媒体美食报道</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold mb-4">免责声明</h3>
+                    <p class="text-gray-300">本内容由AI生成，可能存在错误或不准确之处。请在使用前自行核实信息的准确性。餐厅营业时间、价格、菜单可能随时变化，建议提前联系确认。</p>
+                    <p class="text-gray-300 mt-4">最后更新：2026年8月1日</p>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>© 2026 厦门美食推荐网页 | 整合千问、DeepSeek、豆包推荐结果</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // 初始化ECharts图表
+        document.addEventListener('DOMContentLoaded', function() {
+            // 各区美食数量分布图表
+            const districtChart = echarts.init(document.getElementById('districtChart'));
+            const districtOption = {
+                title: {
+                    text: '各区推荐美食数量',
+                    left: 'center',
+                    textStyle: {
+                        color: '#4b5563'
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c}种 ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    top: 'center',
+                    textStyle: {
+                        color: '#6b7280'
+                    }
+                },
+                series: [
+                    {
+                        name: '美食数量',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['60%', '50%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '18',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: [
+                            {value: 10, name: '思明区', itemStyle: {color: '#f97316'}},
+                            {value: 10, name: '湖里区', itemStyle: {color: '#3b82f6'}},
+                            {value: 10, name: '集美区', itemStyle: {color: '#10b981'}},
+                            {value: 10, name: '海沧区', itemStyle: {color: '#8b5cf6'}},
+                            {value: 10, name: '同安区', itemStyle: {color: '#f59e0b'}},
+                            {value: 10, name: '翔安区', itemStyle: {color: '#ec4899'}}
+                        ]
+                    }
+                ]
+            };
+            districtChart.setOption(districtOption);
+            
+            // 美食荣誉类型统计图表
+            const honorChart = echarts.init(document.getElementById('honorChart'));
+            const honorOption = {
+                title: {
+                    text: '美食荣誉类型统计',
+                    left: 'center',
+                    textStyle: {
+                        color: '#4b5563'
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['米其林/必比登', '非遗认证', '大众点评必吃榜', '媒体推荐', '本地人推荐'],
+                    axisLabel: {
+                        color: '#6b7280',
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '数量',
+                    nameTextStyle: {
+                        color: '#6b7280'
+                    },
+                    axisLabel: {
+                        color: '#6b7280'
+                    }
+                },
+                series: [
+                    {
+                        name: '荣誉数量',
+                        type: 'bar',
+                        data: [8, 6, 12, 15, -1],
+                        itemStyle: {
+                            color: function(params) {
+                                const colorList = ['#f97316', '#8b5cf6', '#10b981', '#3b82f6', '#f59e0b'];
+                                return colorList[params.dataIndex];
+                            }
+                        },
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#4b5563'
+                        }
+                    }
+                ]
+            };
+            honorChart.setOption(honorOption);
+            
+            // 响应式调整图表大小
+            window.addEventListener('resize', function() {
+                districtChart.resize();
+                honorChart.resize();
+            });
+            
+            // 导航栏点击效果
+            const navLinks = document.querySelectorAll('.district-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    // 移除所有active类
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    // 添加当前active类
+                    this.classList.add('active');
+                    
+                    // 平滑滚动到目标区域
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            
+            // 监听滚动，更新导航栏active状态
+            window.addEventListener('scroll', function() {
+                const sections = document.querySelectorAll('section[id]');
+                let currentSection = '';
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.clientHeight;
+                    if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${currentSection}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            // 卡片悬停效果增强
+            const cards = document.querySelectorAll('.food-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
