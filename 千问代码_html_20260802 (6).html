@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>厦门·寻味鹭岛 | 美食指南</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://image.uc.cn/s/uae/g/3n/mos-production/fontawesome-free-7.1.0-web/js/all.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+    :root { --ease-out: cubic-bezier(0.25, 1, 0.5, 1); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background-color: #0f172a; color: #334155; overflow: hidden; height: 100vh; }
+    h1, h2, h3, .serif { font-family: 'Noto Serif SC', serif; }
+
+    /* ===== 滚动容器：bottom 同步更新为 56px ===== */
+    #cardContainer {
+        position: fixed;
+        top: 64px; left: 0; right: 0; bottom: 56px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #cardContainer::-webkit-scrollbar { display: none; }
+
+    /* Header */
+    #site-header {
+        position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 9999;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #globalSearch {
+        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px; padding: 8px 14px 8px 38px; font-size: 13px;
+        color: #fff; width: 220px; max-width: 40vw; outline: none; transition: all 0.3s ease;
+    }
+    #globalSearch:focus { width: 320px; max-width: 60vw; border-color: #ea580c; background: rgba(255,255,255,0.15); box-shadow: 0 0 0 3px rgba(234,88,12,0.2); }
+    #globalSearch::placeholder { color: rgba(255,255,255,0.5); font-size: 12px; }
+
+    /* ===== Footer: 上下两列布局，高度 56px ===== */
+    #site-footer {
+        position: fixed; bottom: 0; left: 0; right: 0; height: 56px; z-index: 9998;
+        background: rgba(2, 6, 23, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255,255,255,0.05);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    }
+
+    /* 卡片 */
+    .region-card {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 64px - 56px);
+        min-height: 500px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        overflow: hidden;
+        content-visibility: auto;
+        contain-intrinsic-size: auto calc(100vh - 64px - 56px);
+        transform: translateZ(0);
+    }
+    .region-card__bg {
+        position: absolute; inset: 0;
+        background-size: cover; background-position: center;
+        transition: transform 1.2s var(--ease-out), filter 0.8s ease;
+        transform: translateZ(0); backface-visibility: hidden;
+    }
+    .region-card:hover .region-card__bg { transform: scale(1.05) translateZ(0); filter: brightness(0.7); }
+    .region-card__overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.4) 100%);
+        pointer-events: none;
+    }
+    .region-card__title-vertical {
+        writing-mode: vertical-rl; text-orientation: mixed;
+        letter-spacing: 0.3em; line-height: 1.4;
+        text-shadow: 0 4px 24px rgba(0,0,0,0.6);
+        transition: letter-spacing 0.6s var(--ease-out);
+    }
+    .region-card:hover .region-card__title-vertical { letter-spacing: 0.5em; }
+
+    /* ===== 竖条：默认透明隐藏，hover 时淡入 + 伸展 ===== */
+    .region-card__accent-line {
+        width: 3px; height: 80px;
+        opacity: 0;
+        transition: opacity 0.5s ease, height 0.6s var(--ease-out);
+    }
+    .region-card:hover .region-card__accent-line {
+        opacity: 1;
+        height: 140px;
+    }
+
+    .food-trigger-btn {
+        opacity: 0; transform: translateX(20px);
+        transition: all 0.4s var(--ease-out); cursor: pointer; user-select: none;
+    }
+    .food-trigger-btn:hover { background: rgba(255,255,255,0.25) !important; transform: translateX(4px) !important; }
+    .region-card:hover .food-trigger-btn { opacity: 1; transform: translateX(0); }
+    .region-card:hover .food-trigger-btn:nth-child(1) { transition-delay: 0.1s; }
+    .region-card:hover .food-trigger-btn:nth-child(2) { transition-delay: 0.2s; }
+    .region-card:hover .food-trigger-btn:nth-child(3) { transition-delay: 0.3s; }
+    .region-card:hover .food-trigger-btn:nth-child(4) { transition-delay: 0.4s; }
+
+    /* Modal */
+    #foodModal {
+        position: fixed; inset: 0; z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    #foodModal.active { opacity: 1; visibility: visible; }
+    #foodModal .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
+    #foodModal .modal-content {
+        position: relative; z-index: 1; background: #fff; border-radius: 20px;
+        max-width: 680px; width: 92vw; max-height: 88vh; overflow-y: auto;
+        box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4);
+        transform: translateY(30px) scale(0.95); transition: transform 0.4s var(--ease-out);
+    }
+    #foodModal.active .modal-content { transform: translateY(0) scale(1); }
+    .badge { @apply px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide uppercase border whitespace-nowrap; }
+    .modal-content::-webkit-scrollbar { width: 4px; }
+    .modal-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* Nav Dots */
+    #navDots {
+        position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+        z-index: 9998; display: flex; flex-direction: column; gap: 12px;
+    }
+    .nav-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.2);
+        cursor: pointer; transition: all 0.3s ease;
+    }
+    .nav-dot.active { background: #fff; transform: scale(1.4); border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+    .nav-dot:hover:not(.active) { background: rgba(255,255,255,0.6); transform: scale(1.2); }
+    @media (max-width: 768px) { #navDots { right: 10px; gap: 10px; } .nav-dot { width: 6px; height: 6px; } }
+</style>
+</head>
+<body class="antialiased selection:bg-orange-100 selection:text-orange-900">
+
+    <header id="site-header">
+        <div class="w-full h-16 flex items-center justify-between px-4 sm:px-8 lg:px-12">
+            <div class="flex items-center gap-3 shrink-0 cursor-pointer" onclick="resetAll()">
+                <div class="w-9 h-9 bg-orange-600 rounded-lg flex items-center justify-center text-white serif text-lg font-bold shadow-md shadow-orange-600/20">厦</div>
+                <div class="leading-tight">
+                    <h1 class="text-base font-bold text-white serif">寻味鹭岛</h1>
+                    <p class="text-[9px] text-white/50 tracking-[0.15em] uppercase">Xiamen Food Guide</p>
+                </div>
+            </div>
+            <div class="relative shrink-0">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-xs pointer-events-none z-10"></i>
+                <input type="text" id="globalSearch" placeholder="搜索美食 / 店铺 / 街区 / 荣誉">
+            </div>
+        </div>
+    </header>
+
+    <main id="cardContainer"></main>
+    <nav id="navDots"></nav>
+
+    <!-- Footer: 上下两列垂直排列 -->
+    <footer id="site-footer">
+        <p class="serif text-xs sm:text-sm text-slate-300">寻味鹭岛 · 厦门美食指南</p>
+        <span class="text-[10px] text-slate-500">© 2026 山海 · 更新于 2026年8月2日</span>
+    </footer>
+
+    <div id="foodModal">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+<script>
+const regions = [
+    { id:'siming', name:'思明区', sub:'百年骑楼 · 南洋古早', history:'通商口岸南洋香料入闽，八市百年海鲜集散，古早味活态传承', bgImg:'https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&q=80&w=1920', accentColor:'#ea580c', foods:[
+        {name:"沙茶面",shop:"乌糖 / 四里 / 月华",district:"民族路 / 湖滨南路 / 镇邦路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4aebc3a7d51ff2f3a3635da937704d97",desc:"以花生酱为底，融入虾米、扁鱼、蒜泥等18种香料慢火熬制汤底，色泽橙红油亮。入口先是花生的醇厚绵密，继而沙茶酱的甜辣在舌尖层层递进，尾调带有海鲜干货的鲜咸回甘。搭配碱水油面与自选加料——大肠、猪肝、鱿鱼、豆腐泡吸饱汤汁，每一口都是老厦门人从早餐吃到宵夜的味觉信仰。",badges:["必比登","必吃榜"]},
+        {name:"土笋冻",shop:"西门土笋冻 / 佳味再添",district:"公园西路 / 斗西路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4915cc255c2a2e210a93f85ebb570c4c",desc:"选用滩涂中新鲜捕捞的沙虫（星虫），经反复搓洗去沙后加水熬煮，虫体天然胶质溶入汤中，冷却后凝结成晶莹剔透的冻状。口感Q弹爽滑如琥珀果冻，毫无腥气，唯有海洋的清鲜。佐以蒜蓉醋汁、芥末酱或甜辣酱，冰镇后食用尤为清爽解腻，是闽南独有的「以虫入馔」智慧结晶。",badges:["传统技艺"]},
+        {name:"烧肉粽",shop:"1980烧肉粽",district:"中山路 / 开元路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/6d54608126059a174bcf1b4b26700740",desc:"糯米提前用卤汁浸泡入味，裹入三层五花肉、咸蛋黄、板栗、香菇、虾米等馅料，以竹叶紧扎成枕形蒸熟。剥开后粽叶清香扑鼻，糯米粒粒分明却软糯黏连，五花肉的油脂已完全渗入米粒，咸蛋黄沙润流油。淋上厦门特有的甜辣酱与花生酱，甜咸交织、油润不腻，是端午节之外全年无休的街头经典。",badges:["传统美食"]},
+        {name:"海蛎煎",shop:"莲欢海蛎煎",district:"局口街 / 八市周边",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/95d6d7b7b73bbccb0c83f33c5c439a45",desc:"精选珠蚝（小海蛎）洗净沥干，拌入地瓜粉浆与青蒜碎，倒入热铁锅摊成圆饼，再淋上蛋液煎至两面金黄焦脆。外层酥壳咔嚓作响，内里海蛎饱满爆汁、嫩滑如凝脂，蛋香与葱蒜香气交融。蘸取厦门甜辣酱食用，酱料的酸甜恰好中和海蛎的鲜腥，外焦里嫩的口感对比令人欲罢不能。",badges:["媒体推荐"]}
+    ]},
+    { id:'huli', name:'湖里区', sub:'特区发祥 · 新派闽菜', history:'经济特区汇聚全球厨艺，法式技法重塑姜母鸭沙茶，高端餐饮新名片', bgImg:'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=85&w=1920', accentColor:'#2563eb', foods:[
+        {name:"焖鲍姜母鸭",shop:"私厦里",district:"五缘湾 / 湾悦城",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/b6acbebe12770922e67dc718823b720d",desc:"严选红面番鸭斩块，与三年老姜片、东山鲍鱼一同入砂锅，以麻油煸炒出香后加米酒文火慢焅两小时以上。鸭肉纤维被彻底软化却不散架，入口即化且饱含姜汁的辛辣暖意；鲍鱼吸满鸭油与酒香，弹牙中带着浓郁的复合鲜味。锅底酱汁浓稠挂勺，拌饭堪称一绝。",badges:["必比登","央视报道"]},
+        {name:"砂锅焗小管",shop:"私厦里",district:"五缘湾 / 湾悦城",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/9032425e3b8d1978b1afba2f2d25ef77",desc:"采用当日到港的东山野生小管（小鱿鱼），个头仅手指长短，膏体饱满未产卵。砂锅烧至极热，铺底洋葱与姜片，小管整只入锅加盖猛火焗制九十秒即出锅。揭盖瞬间蒸汽裹挟着焦香扑面而来，小管表面微焦起泡，咬破后膏体呈半凝固状在口中爆开，鲜甜汁水四溢。",badges:["招牌热菜"]},
+        {name:"红烧牛肉面",shop:"吕娘子",district:"SM城市广场 / 蔡塘",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/10a94051e5c940044b3b7227f76f1388",desc:"牛腱子肉切大块，以八角、桂皮、豆瓣酱与秘制卤包慢炖三小时至酥烂脱骨，汤汁浓赤透亮、酱香深沉。手工擀制的粗面条筋道弹牙，表面粗糙的纹理完美吸附酱汁，每一根都裹满浓郁的牛肉卤汁。碗中铺上大块牛肉、酸菜丝与香菜，热气腾腾间尽显台式与闽南风味融合的匠心。",badges:["必比登推介"]},
+        {name:"四果汤",shop:"R弟四果汤",district:"殿前 / 高崎",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/00ccbbe37cb0839f7ee7abd3cbd0e309",desc:"以手搓仙草冻与石花膏为基底，搭配现煮芋圆、阿达子、莲子、麦仁、绿豆、薏米等十余种配料，浇上蜂蜜水或陈皮糖水，堆满刨冰。仙草的微苦药香与蜂蜜的清甜形成微妙平衡，芋圆软糯、阿达子Q韧、莲子粉绵，每一勺都是不同质地的惊喜。",badges:["传统工艺"]}
+    ]},
+    { id:'jimei', name:'集美区', sub:'学村烟火 · 青春平价', history:'嘉庚学村催生学子美食生态，量大实惠创新，校友传承味觉记忆', bgImg:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=1920', accentColor:'#16a34a', foods:[
+        {name:"春卷",shop:"石鼓路春卷摊",district:"石鼓路 / 集美学村",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/270a3735ab33009887fa78c86b89b1b3",desc:"薄如蝉翼的春卷皮平铺，依次码入高丽菜丝、胡萝卜丝、豆干丁、虾仁、浒苔、花生碎、贡糖碎等十几种馅料，卷成长筒状后对折装袋。一口咬下，外皮柔韧不破，内馅爽脆多汁，浒苔的海洋咸鲜与贡糖的花生甜香在口中碰撞，甜辣酱点睛提味。每份仅售数元，是集美学村数十年来放学路上人手一份的青春味道。",badges:["学生最爱"]},
+        {name:"四果汤",shop:"林阿姨四果汤",district:"石鼓路 / 龙舟池畔",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/1a587bd529f18f9bc0f8e799b3816e7a",desc:"十六种小料整齐排列在玻璃柜中任君挑选：手工仙草、石花、西瓜、菠萝、芒果、芋头、红豆、绿豆、薏米、珍珠、椰果……浇上自熬陈皮蜂蜜水，盖上绵密刨冰。陈皮的柑橘香气让甜味层次丰富而不齁腻，日均售出超800碗，是集美学子四年时光里最甜蜜的注脚。",badges:["日销800碗"]},
+        {name:"麻糍",shop:"杨府匠麻糍店",district:"石鼓路 / 银江路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/39f11622fba7524bdaf8b4b75330f2eb",desc:"沿用古法石臼捶打糯米成团，手工揪剂包馅，外皮薄而韧、拉丝不断。创新加入冰淇淋、奶酪、芋泥、抹茶等内馅，传统与现代口味在一颗麻糍中奇妙融合。店主十年如一日坚持手作，拒绝机器量产，每一颗都带着掌心的温度。",badges:["十年手作"]},
+        {name:"鸡蛋汉堡",shop:"陈锦健鸡蛋堡",district:"石鼓路 / 岑东路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/4ab7556f1200c7633040f8f8c06d11bf",desc:"特制圆形铁板刷油预热，先倒入一层薄面糊打底，磕入一整颗鸡蛋，再铺上鲜肉馅、芝士片、玉米粒，最后盖上一层面糊封顶，小火慢煎至两面金黄酥脆。切开时能听到清晰的「咔嚓」声，外壳焦脆如饼干，内里蛋液半凝、肉馅多汁、芝士拉丝。日销破千个，下课铃响后摊位前的长队是集美街头最具辨识度的风景线。",badges:["日销破千"]}
+    ]},
+    { id:'haicang', name:'海沧区', sub:'九龙江口 · 三宝鲜味', history:'咸淡水交汇孕育滩涂珍馐，清代渔家技艺升格省级非遗', bgImg:'https://images.unsplash.com/photo-1579631542720-3a87824fff86?auto=format&fit=crop&q=80&w=1920', accentColor:'#9333ea', foods:[
+        {name:"土笋冻",shop:"鑫竹林 / 阿丽海鲜城",district:"海沧街道 / 嵩屿码头",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/e75f939054af57804a6ea38bbff65433",desc:"海沧位列「海沧三宝」之首的土笋冻，仅取九龙江入海口咸淡水交汇处生长的肥硕沙虫，清晨退潮时人工采挖，当日加工不过夜。成品冻体通透如水晶，弹性十足可轻颤晃动，入口冰凉滑嫩，鲜味纯净无杂。配蒜蓉酱油醋碟，已列入福建省级非遗名录。",badges:["省级非遗","海沧三宝"]},
+        {name:"白灼章鱼",shop:"亚珠海鲜大酒楼",district:"海沧大道 / 未来海岸",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/b00e3c08e5fb7ce1dda80e594bab18d0",desc:"选用本港鲜活章鱼，宰杀后以粗盐反复揉搓去除黏液与腥味。锅中水烧至将沸未沸的「虾眼水」状态，放入章鱼浸烫至刚断生即捞出过冰水。切段装盘，触须卷曲如花，肉质洁白透亮，入口爽脆弹牙、鲜甜本真，五十余年来始终是海沧宴席上最先被光盘的冷盘。",badges:["传统名菜"]},
+        {name:"土龙汤",shop:"佳味馆",district:"新阳街道 / 霞阳社区",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/ee33007a865b2748c4ded85da8071076",desc:"土龙（食蟹豆齿鳗）是九龙江口特有的珍稀底栖鱼类。处理干净后斩段，与当归、枸杞、红枣、老姜同入陶瓮，加米酒隔水炖煮三小时以上。汤色乳白浓郁如奶，入口醇厚温润，鱼肉细嫩无刺、骨肉分离。获评「中国名菜」，是海沧人待客最高礼遇。",badges:["中国名菜"]},
+        {name:"吴冠沙茶面",shop:"吴冠沙茶面",district:"吴冠村 / 海沧大桥下",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/48602bfa4044d6ee829125e78d704658",desc:"藏在海沧大桥北侧吴冠老村中的隐世小店，没有招牌却靠口碑流传数十年。汤底走偏甜路线，花生酱比例高于市区流派。必点鸭血与大肠——鸭血嫩滑如布丁、孔隙吸满甜鲜汤汁；大肠处理得毫无异味，卤香入味、软糯带嚼劲。坐在村口榕树下嗦面，新旧时空在一碗面中安静交汇。",badges:["隐藏美食"]}
+    ]},
+    { id:'tongan', name:'同安区', sub:'千年银城 · 节庆古礼', history:'五代闽国封肉逾千年，祭祀节庆食俗完整保留，非遗活化石', bgImg:'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&q=80&w=1920', accentColor:'#ca8a04', foods:[
+        {name:"同安封肉",shop:"泥山饭店",district:"大同街道 / 银湖中路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/2fd9c6244555ee5df8810c0938e3fc18",desc:"整块带皮五花肉切方正大块，以纱布包裹防止炖煮散形。先用麦芽糖上色炸至表皮起虎皮纹，再与八角、桂皮、酱油、冰糖、香菇、栗子同入瓦缸，文火焖炖四小时以上。上桌时解开纱布，肉块颤巍巍如凝脂，筷子轻触即陷入。市级非遗技艺代代相传，是同安宴席上不可或缺的头道菜。",badges:["市级非遗","央视报道"]},
+        {name:"大肠血",shop:"实再客古庄",district:"祥平街道 / 古庄村",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/3eb72475a7356fe309bef917b46093c8",desc:"将新鲜猪血灌入清洗干净的大肠中，两端扎紧，放入卤汤中小火慢煮至定型。切片后外层大肠弹牙有嚼劲，内里猪血嫩滑如豆花、气孔细密均匀。蘸蒜泥醋汁食用，醋的酸锐恰好平衡了内脏的厚重感，被官方列为来同安必吃清单首位。",badges:["官方推荐"]},
+        {name:"炸枣",shop:"双红食品",district:"汀溪镇 / 莲花镇",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/f17dff7915783c3f6f8ec7d9ffbf966b",desc:"糯米粉揉团包入馅料，搓成椭圆枣形后入油锅炸至金黄膨胀。咸馅以豆干丁、韭菜末、虾米炒制，咬开后外酥内糯、咸鲜爆汁；甜馅则为花生芝麻白糖，香甜酥脆。「枣」谐音「早」，寓意早日添丁，是同安节庆必备吉食。双红食品坚持手工包制、现炸现卖。",badges:["手工制作"]},
+        {name:"海蛎炸",shop:"潘涂夜市",district:"西柯街道 / 潘涂社区",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/41940b46bfdf67f6a47087509015175f",desc:"潘涂被誉为「海蛎第一村」。新鲜海蛎拌入葱花、地瓜粉浆，舀入特制长柄铁勺，浸入滚烫油锅中炸至外壳金黄酥脆、边缘泛起蕾丝般的焦边。趁热咬下，外皮酥脆掉渣，内里海蛎滚烫爆浆、葱香弥漫。夜幕降临后潘涂夜市灯火通明，海蛎炸摊位前永远排着长队。",badges:["夜市美食"]}
+    ]},
+    { id:'xiangan', name:'翔安区', sub:'东部沿海 · 百味乡愁', history:'闽南移民中转站兼融海耕传统，一村一品年产值超三千万', bgImg:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=1920', accentColor:'#db2777', foods:[
+        {name:"地瓜粉粿",shop:"多家传统餐馆",district:"马巷街道 / 新店街道",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/e43458e00789f2b4d1278d44bfe937be",desc:"以地瓜粉加水调浆蒸制成半透明粿皮，切成菱形或条状，与海蛏、虾仁、瘦肉、香菇、芹菜一同煮成羹汤。红葱油是灵魂点睛之笔——葱头切碎慢炸至焦褐，连油带渣浇入汤中，浓郁的葱油香瞬间激活整碗汤的层次感。这道菜可追溯至明代闽南移民渡海携带干粮的演变，承载着数百年的迁徙记忆。",badges:["历史传承"]},
+        {name:"碗仔粿",shop:"刘记碗仔粿",district:"马巷老街 / 巷南路",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/c741c78cc938ff14f144a8c4e94e7d46",desc:"米浆注入小陶碗中，中央嵌入肉末、鹌鹑蛋、干贝丝等馅料，叠入蒸笼大火蒸熟。出锅时粿体洁白微鼓、颤动如凝脂。淋上甜辣酱与蒜蓉酱，撒少许香菜末，一口一个刚好。单价三元起，是翔安街头最亲民的晨间点心，也是游子返乡下车后直奔的第一口乡愁。",badges:["平价小吃"]},
+        {name:"芋包",shop:"翔寅小吃店",district:"新店街道 / 澳头渔港",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/6d2f2b569974c4546706994809480ba8",desc:"槟榔芋蒸熟碾泥，掺入适量地瓜粉揉成面团作皮，包入猪肉、虾仁、香菇、荸荠丁调制的咸馅，捏成半月形后入油锅炸至外皮金黄起泡。咬开酥脆的芋泥外壳，内馅汁水丰盈、荸荠粒提供清脆的口感跳跃。搭配腌渍酸萝卜片食用，酸爽解腻的同时让芋香更加突出。",badges:["传统工艺"]},
+        {name:"东寮豆干",shop:"东寮社区作坊",district:"新圩镇 / 东寮社区",img:"https://agent.my.cn/mos/9704e463aefd442096438b9aae5e259c/3ff3068c6724ddf852b104253bf33748",desc:"东寮社区制作豆干的历史逾百年，至今仍保留古法工艺：本地黄豆浸泡磨浆、石膏点卤、手工压制成型、盐水卤煮入味。成品豆干色泽淡黄、质地紧实细腻，豆香纯正浓郁而无豆腥。作为翔安「一村一品」标杆项目，年产值超三千万元，是从家庭作坊走向标准化产业的乡村振兴样本。",badges:["一村一品"]}
+    ]}
+];
+
+const container = document.getElementById('cardContainer');
+const searchInput = document.getElementById('globalSearch');
+const modal = document.getElementById('foodModal');
+const modalContent = document.getElementById('modalContent');
+const navDotsContainer = document.getElementById('navDots');
+
+function getBadgeStyle(text) {
+    if (text.includes('必比登') || text.includes('米其林')) return 'bg-amber-50 text-amber-800 border-amber-200';
+    if (text.includes('非遗') || text.includes('传统')) return 'bg-violet-50 text-violet-800 border-violet-200';
+    if (text.includes('央视') || text.includes('媒体')) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    return 'bg-blue-50 text-blue-800 border-blue-200';
+}
+
+window.openFoodModal = function(regionName, foodIndex, regionAccent) {
+    const region = regions.find(r => r.name === regionName);
+    if (!region) return;
+    const food = region.foods[foodIndex];
+    if (!food) return;
+    modalContent.innerHTML = `
+        <div class="flex flex-col md:flex-row">
+            <div class="md:w-2/5 relative shrink-0">
+                <div class="w-full aspect-[4/3] md:aspect-auto md:h-full bg-slate-100 rounded-t-[20px] md:rounded-l-[20px] md:rounded-tr-none overflow-hidden">
+                    <img src="${food.img}" alt="${food.name}" class="w-full h-full object-cover" loading="lazy">
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 h-16 md:hidden bg-gradient-to-t from-black/50 to-transparent"></div>
+                <h3 class="absolute bottom-3 left-4 serif text-xl font-bold text-white md:hidden">${food.name}</h3>
+            </div>
+            <div class="md:w-3/5 p-6 md:p-8 flex flex-col">
+                <div class="hidden md:block mb-1"><h3 class="serif text-2xl font-bold text-slate-800">${food.name}</h3></div>
+                <div class="space-y-1.5 mb-5 mt-1 md:mt-0">
+                    <div class="flex items-start gap-2 text-sm text-slate-600"><i class="fas fa-store text-orange-400 mt-0.5 shrink-0 w-4 text-center"></i><span>${food.shop}</span></div>
+                    <div class="flex items-start gap-2 text-sm text-slate-500"><i class="fas fa-map-marker-alt text-rose-400 mt-0.5 shrink-0 w-4 text-center"></i><span>${food.district}</span></div>
+                </div>
+                <div class="flex-1 mb-5"><p class="text-slate-700 leading-[1.85] text-[14px] md:text-[15px]">${food.desc}</p></div>
+                <div class="mt-auto pt-4 border-t border-slate-100">
+                    <div class="flex flex-wrap gap-2 mb-3">${food.badges.map(b=>`<span class="badge ${getBadgeStyle(b)}">${b}</span>`).join('')}</div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-400">${regionName} · 推荐美食</span>
+                        <div class="flex items-center gap-1.5"><span class="text-[10px] text-slate-400">点击遮罩关闭</span><div class="w-2 h-2 rounded-full" style="background:${regionAccent}"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white flex items-center justify-center transition-colors z-10"><i class="fas fa-times text-sm"></i></button>`;
+    modal.classList.add('active');
+};
+window.closeModal = function() { modal.classList.remove('active'); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+let currentRegionIndex = 0;
+function updateNavDots() {
+    navDotsContainer.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('active', i === currentRegionIndex));
+}
+function scrollToRegion(index) {
+    const cards = container.querySelectorAll('.region-card');
+    if (cards[index]) cards[index].scrollIntoView({ behavior: 'smooth' });
+}
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const idx = parseInt(entry.target.dataset.index);
+            if (currentRegionIndex !== idx) { currentRegionIndex = idx; updateNavDots(); }
+        }
+    });
+}, { root: container, threshold: [0.5] });
+
+function renderCards(filterText = '') {
+    container.innerHTML = '';
+    navDotsContainer.innerHTML = '';
+    let visibleRegions = [];
+    regions.forEach(r => {
+        const filtered = r.foods.filter(f => !filterText || f.name.includes(filterText) || f.shop.includes(filterText) || f.district.includes(filterText) || f.desc.includes(filterText) || f.badges.some(b => b.includes(filterText)));
+        if (filterText && filtered.length === 0) return;
+        visibleRegions.push({ ...r, filteredFoods: filtered });
+    });
+    if (!visibleRegions.length) {
+        container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-white/40 shrink-0"><i class="fas fa-search text-5xl mb-4"></i><p class="serif text-xl">未找到相关美食</p><button onclick="document.getElementById('globalSearch').value='';renderCards()" class="mt-6 text-orange-400 text-sm hover:underline">清除搜索</button></div>`;
+        return;
+    }
+    visibleRegions.forEach((r, vi) => {
+        const dot = document.createElement('div');
+        dot.className = `nav-dot${vi === 0 ? ' active' : ''}`;
+        dot.title = r.name;
+        dot.onclick = () => scrollToRegion(vi);
+        navDotsContainer.appendChild(dot);
+        const card = document.createElement('div');
+        card.className = 'region-card';
+        card.dataset.index = vi;
+        const btns = r.foods.map((f, fi) => {
+            if (!(!filterText || r.filteredFoods.includes(f))) return '';
+            return `<button class="food-trigger-btn px-4 py-2 rounded-full text-sm font-medium border backdrop-blur-sm transition-all" style="background:${r.accentColor}20;border-color:${r.accentColor}50;color:#fff" onclick="event.stopPropagation();openFoodModal('${r.name}',${fi},'${r.accentColor}')"><i class="fas fa-utensils mr-1.5 text-[10px] opacity-70"></i>${f.name}</button>`;
+        }).join('');
+        card.innerHTML = `
+            <div class="region-card__bg" style="background-image:url('${r.bgImg}')"></div>
+            <div class="region-card__overlay"></div>
+            <div class="relative z-10 h-full flex">
+                <div class="flex flex-col justify-end pb-16 md:pb-24 pl-8 md:pl-16 lg:pl-24 pr-6">
+                    <div class="region-card__accent-line mb-6 rounded-full" style="background:${r.accentColor}"></div>
+                    <h2 class="region-card__title-vertical serif text-5xl md:text-7xl lg:text-8xl font-black text-white">${r.name}</h2>
+                </div>
+                <div class="flex-1 flex flex-col justify-end pb-14 md:pb-20 pr-8 md:pr-16 lg:pr-24 pl-4">
+                    <p class="serif text-xl md:text-3xl text-white/90 mb-4 tracking-widest">${r.sub}</p>
+                    <p class="text-sm md:text-base text-white/60 leading-relaxed max-w-xl mb-8">${r.history}</p>
+                    <div class="flex flex-wrap gap-3 mb-4">${btns}</div>
+                    <p class="text-xs text-white/30 mt-2 flex items-center gap-2"><i class="fas fa-hand-pointer"></i> 点击上方美食标签查看详情</p>
+                </div>
+            </div>`;
+        container.appendChild(card);
+        observer.observe(card);
+    });
+    currentRegionIndex = 0;
+    updateNavDots();
+}
+
+function resetAll() { searchInput.value = ''; renderCards(); container.scrollTo(0, 0); }
+let debounceTimer;
+searchInput.addEventListener('input', e => { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => renderCards(e.target.value.trim()), 300); });
+renderCards();
+</script>
+</body>
+</html>
+
+
